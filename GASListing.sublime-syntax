@@ -40,6 +40,11 @@ contexts:
       scope: constant.numeric.gaslisting
       push: line_ident
 
+    # file/line hints as line comments
+    - match: '^(/|\w:\\)\S+\.\S+:\d+'
+      scope: comment.line.gaslisting
+      push: line_comment
+
   line_ident:
     # Start of symbol name
     - match: "<"
