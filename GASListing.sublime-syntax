@@ -37,7 +37,7 @@ contexts:
 
     # Line numbers, followed by a symbol name
     - match: '^\b{{hex_digit}}+\b'
-      scope: constant.numeric.gaslisting
+      scope: comment.gaslisting
       push: line_ident
 
     # file/line hints as line comments
@@ -56,7 +56,7 @@ contexts:
       pop: true
 
   line_number:
-    - meta_scope: constant.numeric.gaslisting
+    - meta_scope: comment.gaslisting
 
     # Tab separator, start of the instruction encoding
     - match: '\t'
