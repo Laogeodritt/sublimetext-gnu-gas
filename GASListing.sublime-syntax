@@ -67,7 +67,7 @@ contexts:
       pop: true
 
   instruction_encoding:
-    - meta_scope: keyword.gaslisting
+    - meta_scope: constant.numeric.gaslisting
 
     # Tab separator or double space, start of the instruction mnemonic/ASCII
     # data dump
@@ -79,7 +79,7 @@ contexts:
       pop: true
 
   instruction_name:
-    - meta_scope: string.gaslisting
+    - meta_scope: string.quoted.double.gaslisting
 
     # Start of GAS comment
     - match: ";"
@@ -95,7 +95,7 @@ contexts:
       pop: true
 
   symbol_tag:
-    - meta_scope: entity.name.gaslisting
+    - meta_scope: entity.name.function.gaslisting
 
     # End of symbol name
     - match: ">"
