@@ -4,6 +4,7 @@
 
 # Generic GNU GAS Sublime Text 3 syntax
 # By Dean Camera, dean [at] fourwalledcubicle [dot] com
+# https://github.com/abcminiuser/sublimetext-gnu-gas
 
 
 file_extensions:
@@ -59,7 +60,7 @@ contexts:
     - meta_scope: comment.gaslisting
 
     # Tab separator, start of the instruction encoding
-    - match: '\t'
+    - match: '\t| +'
       push: instruction_encoding
 
     # End of line (error condition)
@@ -71,7 +72,7 @@ contexts:
 
     # Tab separator or double space, start of the instruction mnemonic/ASCII
     # data dump
-    - match: "(\t|  )"
+    - match: "\t| +"
       push: instruction_name
 
     # End of line (error condition)
