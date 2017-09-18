@@ -14,16 +14,31 @@ scope: source.gaslisting
 variables:
   # Hex digit, case-insensitive
   hex_digit: '[0-9a-fA-F]'
+  white_sep: '(\t|\s{2,})+'
+  registers: '(?i)(r\d{1,2}|a[1-4]|v[1-8]|wr|sb|sl|fp|ip|sp|lr|pc)'
+  control_kw: '(as|ls)[lr]'
 
 contexts:
   main:
-    # GAS comments, full line
-    - match: ';'
-      scope: punctuation.definition.comment.gaslisting
+    # Line numbers, followed by an instruction
+    - match: '\b{{hex_digit}}+:'
+      scope: string.quoted.double.gaslisting
+      push: instruction_addr
+
+    # Line numbers, followed by a symbol name
+    - match: '^\b{{hex_digit}}+\b'
+      scope: string.quoted.double.gaslisting
+      push: ident_addr
+
+    - include: inc_comments
+
+    # file/line hints as line comments
+    - match: '^(/|\w:\\)\S+\.\S+:\d+'
       push: line_comment
 
-    # C-like comments, full line
-    - match: '//'
+  inc_comments:
+    # GAS and C comments, full line
+    - match: '(;|//)'
       scope: punctuation.definition.comment.gaslisting
       push: line_comment
 
@@ -32,66 +47,27 @@ contexts:
       scope: punctuation.definition.comment.gaslisting
       push: multi_line_comment
 
-    # Line numbers, followed by an instruction
-    - match: '\b{{hex_digit}}+:'
-      push: line_number
+  line_comment:
+    - meta_scope: comment.line.gaslisting
 
-    # Line numbers, followed by a symbol name
-    - match: '^\b{{hex_digit}}+\b'
-      scope: comment.gaslisting
-      push: line_ident
+    # End of line
+    - match: '$'
+      pop: true
 
-    # file/line hints as line comments
-    - match: '^(/|\w:\\)\S+\.\S+:\d+'
-      scope: comment.line.gaslisting
-      push: line_comment
+  multi_line_comment:
+    - meta_scope: comment.line.gaslisting
 
-  line_ident:
+    # End of comment
+    - match: '\*/'
+      pop: true
+
+  ident_addr:
     # Start of symbol name
     - match: "<"
-      scope: entity.name.name.begin.gaslisting
+      scope: punctuation.definition.generic.begin.gaslisting
       push: symbol_tag
 
     # End of line (error condition)
-    - match: $
-      pop: true
-
-  line_number:
-    - meta_scope: comment.gaslisting
-
-    # Tab separator, start of the instruction encoding
-    - match: '\t| +'
-      push: instruction_encoding
-
-    # End of line (error condition)
-    - match: $
-      pop: true
-
-  instruction_encoding:
-    - meta_scope: constant.numeric.gaslisting
-
-    # Tab separator or double space, start of the instruction mnemonic/ASCII
-    # data dump
-    - match: "\t| +"
-      push: instruction_name
-
-    # End of line (error condition)
-    - match: $
-      pop: true
-
-  instruction_name:
-    - meta_scope: string.quoted.double.gaslisting
-
-    # Start of GAS comment
-    - match: ";"
-      push: line_comment
-
-    # Start of C-like comment
-    - match: '//'
-      scope: punctuation.definition.comment.gaslisting
-      push: line_comment
-
-    # End of line
     - match: $
       pop: true
 
@@ -100,23 +76,88 @@ contexts:
 
     # End of symbol name
     - match: ">"
-      scope: entity.name.end
+      scope: punctuation.definition.generic.end.gaslisting
       pop: true
+
+    # End of line (error condition)
+    - match: '$'
+      pop: true
+
+  instruction_addr:
+    # Tab separator or equiv spaces, start of the instruction encoding
+    - match: '{{white_sep}}'
+      push: instruction_encoding
 
     # End of line (error condition)
     - match: $
       pop: true
 
-  line_comment:
-    - meta_scope: comment.line.gaslisting
+  instruction_encoding:
+    - match: '{{hex_digit}}'
+    #  scope: constant.numeric.hex.gaslisting
+
+    # Tab separator or equiv spaces, start of the instruction mnemonic/ASCII
+    # data dump
+    - match: '{{white_sep}}'
+      push: instruction_mnemonic
+
+    # End of line (error condition)
+    - match: $
+      pop: true
+
+  instruction_mnemonic:
+    - include: inc_comments
+
+    - match: '[A-Za-z0-9]'
+      scope: keyword.other.gaslisting
+
+    - match: '\.'
+      push: instruction_suffix
+
+    - match: '\s'
+      push: instruction_args
 
     # End of line
     - match: $
       pop: true
 
-  multi_line_comment:
+  instruction_suffix:
+    - match: '[A-Za-z0-9]'
+      scope: storage.modifier.gaslisting
+
+    - match: '\s'
+      push: instruction_args
+
+    - match: '$'
+      pop: true
+
+  instruction_args:
+    - include: inc_comments
+
+    - match: '\b{{registers}}\b'
+      scope: constant.language.gaslisting
+
+    - match: '(?i)\b{{control_kw}}\b'
+      scope: keyword.control.gaslisting
+
+    - match: '(?i)(#|=)[0-9]+\b'
+      scope: constant.numeric.integer.gaslisting
+
+    - match: '(?i)((#|=)?0x{{hex_digit}}+|(0x)?{{hex_digit}}+)\b'
+      scope: constant.numeric.hex.gaslisting
+
+    - match: '<'
+      scope: punctuation.definition.comment.gaslisting
+      push: addr_tag
+
+    - include: inc_comments
+
+    - match: $
+      pop: true
+
+  # <tag> for addresses in assembler listings
+  addr_tag:
     - meta_scope: comment.line.gaslisting
 
-    # End of comment
-    - match: \*/
+    - match: '>|$'
       pop: true
